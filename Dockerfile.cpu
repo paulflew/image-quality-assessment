@@ -1,7 +1,9 @@
-FROM tensorflow/tensorflow:2.0.0-py3
+FROM ubuntu
 
 # Install system packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
+      python3 \
+      python3-pip \
       bzip2 \
       g++ \
       git \
@@ -15,10 +17,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY src /src
 COPY entrypoints /src/entrypoints
 
+RUN mkdir -p /src/weights
+COPY models/MobileNet/weights_mobilenet_aesthetic_0.07.hdf5 /src/weights/aesthetic.hdf5
+COPY models/MobileNet/weights_mobilenet_technical_0.11.hdf5 /src/weights/technical.hdf5
+
 WORKDIR /src
 
-RUN pip install -r requirements.txt
+RUN pip3 install -r requirements.txt
 
 ENV PYTHONPATH='/src/:$PYTHONPATH'
 
-ENTRYPOINT ["entrypoints/entrypoint.train.cpu.sh"]
+ENTRYPOINT ["entrypoints/entrypoint.webserver.sh"]

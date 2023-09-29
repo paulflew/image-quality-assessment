@@ -27,10 +27,10 @@ def image_dir_to_json(img_dir, img_type='jpg'):
 
 
 def predict(model, data_generator):
-    return model.predict_generator(data_generator, workers=8, use_multiprocessing=True, verbose=1)
+    return model.predict(data_generator, workers=8, use_multiprocessing=True, verbose=1)
 
 
-def main(base_model_name, weights_file, image_source, predictions_file, img_format='jpg'):
+def main(weights_dir, image_source, predictions_file, img_format='jpg'):
     # load samples
     if os.path.isfile(image_source):
         image_dir, samples = image_file_to_json(image_source)
@@ -38,21 +38,26 @@ def main(base_model_name, weights_file, image_source, predictions_file, img_form
         image_dir = image_source
         samples = image_dir_to_json(image_dir, img_type='jpg')
 
-    # build model and load weights
-    nima = Nima(base_model_name, weights=None)
-    nima.build()
-    nima.nima_model.load_weights(weights_file)
+    # build models and load weights
+    nima_technical = Nima('MobileNet', weights=None)
+    nima_technical.build()
+    nima_technical.nima_model.load_weights(os.path.join(weights_dir, 'technical.hdf5'))
+    nima_aesthetic = Nima('MobileNet', weights=None)
+    nima_aesthetic.build()
+    nima_aesthetic.nima_model.load_weights(os.path.join(weights_dir, 'aesthetic.hdf5'))
 
     # initialize data generator
-    data_generator = TestDataGenerator(samples, image_dir, 64, 10, nima.preprocessing_function(),
+    data_generator = TestDataGenerator(samples, image_dir, 64, 10, nima_technical.preprocessing_function(),
                                        img_format=img_format)
 
     # get predictions
-    predictions = predict(nima.nima_model, data_generator)
+    technical_predictions = predict(nima_technical.nima_model, data_generator)
+    aesthetic_predictions = predict(nima_aesthetic.nima_model, data_generator)
 
     # calc mean scores and add to samples
     for i, sample in enumerate(samples):
-        sample['mean_score_prediction'] = calc_mean_score(predictions[i])
+        sample['technical'] = calc_mean_score(technical_predictions[i])
+        sample['aesthetic'] = calc_mean_score(aesthetic_predictions[i])
 
     print(json.dumps(samples, indent=2))
 
@@ -63,8 +68,7 @@ def main(base_model_name, weights_file, image_source, predictions_file, img_form
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-b', '--base-model-name', help='CNN base model name', required=True)
-    parser.add_argument('-w', '--weights-file', help='path of weights file', required=True)
+    parser.add_argument('-w', '--weights-dir', help='path of weights files', required=True)
     parser.add_argument('-is', '--image-source', help='image directory or file', required=True)
     parser.add_argument('-pf', '--predictions-file', help='file with predictions', required=False, default=None)
 
