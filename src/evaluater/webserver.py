@@ -1,13 +1,11 @@
 
 import os
-import glob
-import json
 import argparse
-from utils.utils import calc_mean_score, save_json
+from utils.utils import calc_mean_score
 from handlers.model_builder import Nima
-from handlers.data_generator import TestDataGenerator
-from flask import Flask, flash, request, redirect, url_for
-from werkzeug.utils import secure_filename
+from flask import Flask, flash, request, redirect
+import numpy as np
+from PIL import Image
 
 UPLOAD_FOLDER = '/tmp'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
@@ -37,10 +35,11 @@ def upload_file():
         if file.filename == '':
             flash('No selected file')
             return redirect(request.url)
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            return process(app.config['UPLOAD_FOLDER'], filename)
+        if file:
+            image = Image.open(file)
+            if image.size != (224, 224):
+                image = image.resize((224, 224))
+            return process(image)
     return '''
     <!doctype html>
     <title>Upload new File</title>
@@ -52,22 +51,17 @@ def upload_file():
     '''
 
 
-def process(image_dir, image_file, img_format='jpg'):
-    samples = [{'image_id': os.path.basename(image_file).split('.')[0]}]
-
-    # initialize data generator
-    data_generator = TestDataGenerator(samples, image_dir, 64, 10, nima_technical.preprocessing_function(), img_format=img_format)
+def process(image):
+    # prepare image
+    X = np.array([np.asarray(image)])
+    X = nima_technical.preprocessing_function()(X)
 
     # get predictions
-    technical_predictions = nima_technical.nima_model.predict(data_generator, verbose=1 if __debug__ else data_generator)
-    aesthetic_predictions = nima_aesthetic.nima_model.predict(data_generator, verbose=1 if __debug__ else data_generator)
+    technical_predictions = nima_technical.nima_model(X)
+    aesthetic_predictions = nima_aesthetic.nima_model(X)
 
-    # calc mean scores and add to samples
-    for i, sample in enumerate(samples):
-        sample['technical'] = calc_mean_score(technical_predictions[i])
-        sample['aesthetic'] = calc_mean_score(aesthetic_predictions[i])
-
-    return samples
+    # calc mean scores and return
+    return {'technical': calc_mean_score(technical_predictions), 'aesthetic': calc_mean_score(aesthetic_predictions)}
 
 
 if __name__ == '__main__':

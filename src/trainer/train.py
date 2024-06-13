@@ -22,7 +22,6 @@ def train(
     learning_rate_all,
     dropout_rate,
     job_dir,
-    img_format='jpg',
     existing_weights=None,
     multiprocessing_data_load=False,
     num_workers_data_load=2,
@@ -51,7 +50,6 @@ def train(
         batch_size,
         n_classes,
         nima.preprocessing_function(),
-        img_format=img_format,
     )
 
     validation_generator = TestDataGenerator(
@@ -60,7 +58,6 @@ def train(
         batch_size,
         n_classes,
         nima.preprocessing_function(),
-        img_format=img_format,
     )
 
     # initialize callbacks TensorBoard and ModelCheckpoint

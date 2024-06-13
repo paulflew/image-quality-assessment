@@ -9,13 +9,11 @@
             "type": "python",
             "request": "launch",
             "module": "evaluater.webserver",
-            "justMyCode": true,
+            "justMyCode": false,
             "cwd": "${workspaceFolder}/src",
             "args": [
                 "-w",
-                "/tmp",
-                "-is",
-                "/home/prf/images/100"
+                "/tmp"
             ]
         }
     ]

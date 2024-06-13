@@ -37,7 +37,7 @@ def parse_raw_data(df):
     samples = []
     for i, row in df.iterrows():
         max_entropy_dist = get_max_entropy_distribution(row['mos'])
-        samples.append({'image_id': row['id'].split('.')[0], 'label': max_entropy_dist.tolist()})
+        samples.append({'image_file': row['id'], 'label': max_entropy_dist.tolist()})
 
     return samples
 

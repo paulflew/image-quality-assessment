@@ -10,9 +10,9 @@ from handlers.data_generator import TestDataGenerator
 
 def image_file_to_json(img_path):
     img_dir = os.path.dirname(img_path)
-    img_id = os.path.basename(img_path).split('.')[0]
+    image_file = os.path.basename(img_path)
 
-    return img_dir, [{'image_id': img_id}]
+    return img_dir, [{'image_file': image_file}]
 
 
 def image_dir_to_json(img_dir, img_type='jpg'):
@@ -20,8 +20,8 @@ def image_dir_to_json(img_dir, img_type='jpg'):
 
     samples = []
     for img_path in img_paths:
-        img_id = os.path.basename(img_path).split('.')[0]
-        samples.append({'image_id': img_id})
+        image_file = os.path.basename(img_path)
+        samples.append({'image_file': image_file})
 
     return samples
 
@@ -30,7 +30,7 @@ def predict(model, data_generator):
     return model.predict(data_generator, workers=8, use_multiprocessing=True, verbose=1)
 
 
-def main(weights_dir, image_source, predictions_file, img_format='jpg'):
+def main(weights_dir, image_source, predictions_file):
     # load samples
     if os.path.isfile(image_source):
         image_dir, samples = image_file_to_json(image_source)
@@ -47,8 +47,7 @@ def main(weights_dir, image_source, predictions_file, img_format='jpg'):
     nima_aesthetic.nima_model.load_weights(os.path.join(weights_dir, 'aesthetic.hdf5'))
 
     # initialize data generator
-    data_generator = TestDataGenerator(samples, image_dir, 64, 10, nima_technical.preprocessing_function(),
-                                       img_format=img_format)
+    data_generator = TestDataGenerator(samples, image_dir, 64, 10, nima_technical.preprocessing_function())
 
     # get predictions
     technical_predictions = predict(nima_technical.nima_model, data_generator)
